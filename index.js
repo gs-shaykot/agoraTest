@@ -17,7 +17,7 @@ app.use(cookieParser());
 
 
 app.use(cors({
-    origin: ['http://localhost:5173', 'https://agora-b3f83.web.app', 'http://localhost:5000', 'hagoratest.up.railway.app'],
+    origin: ['http://localhost:5173', 'https://agora-b3f83.web.app', 'https://agoratest.up.railway.app'],
     credentials: true
 }));
 
