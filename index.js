@@ -1,3 +1,4 @@
+// i am using this backend code for token. check the code and let me know if you find any issues.
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -15,7 +16,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use(cors({
-    origin: ['http://localhost:5173', 'https://agora-b3f83.web.app', 'https://agoratest.up.railway.app'],
+    origin: ['http://localhost:5173', 'https://agora-b3f83.web.app', 'http://localhost:5000'],
     credentials: true
 }));
 
@@ -28,7 +29,7 @@ const io = new Server(server, {
 });
 
 const APP_ID = process.env.AGORA_APP_ID;
-const AppCertificate = process.env.APP_CERTIFICATE;
+const AppCertificate = process.env.APP_CERTIFICATE; 
 
 const roomUsers = {};
 const roomCodeToIdMap = {}; // New mapping for roomCode to room_id
@@ -162,39 +163,6 @@ io.on("connection", (socket) => {
         console.log(`Disconnected user ID: ${socket.id}`);
     });
 });
-
-// // 100ms token generate 
-// app.get('/token', async (req, res) => {
-//     try {
-//         const { roomId } = req.query;
-//         if (!roomId) {
-//             return res.status(400).json({ error: "Room ID is required" });
-//         }
-
-//         // Map roomCode to actual room_id if necessary
-//         const actualRoomId = roomCodeToIdMap[roomId] || roomId;
-
-//         const tokenId = uuidv4();
-//         const payload = {
-//             access_key: process.env.APP_ACCESS_KEY,
-//             room_id: actualRoomId,
-//             user_id: `user-${Math.random().toString(36).substring(7)}`,
-//             role: "host",
-//             jwtid: tokenId,
-//         };
-
-//         const token = jwt.sign(payload, process.env.HMS_APP_SECRET, {
-//             expiresIn: "24h",
-//             algorithm: "HS256",
-//             jwtid: tokenId,
-//         });
-//         console.log("Generated token:", token);
-//         res.json({ token });
-//     } catch (error) {
-//         console.error("Error generating token:", error);
-//         res.status(500).json({ error: "Failed to generate token" });
-//     }
-// });
 
 
 app.get('/', (req, res) => {
@@ -367,23 +335,40 @@ async function run() {
 
         app.post('/api/token', async (req, res) => {
             const { channelName, uid } = req.body;
-            if (!channelName || !uid) {
-                return res.status(400).json({ error: "Channel name and UID are required" });
+            if (!channelName || (!uid && uid !== 0)) {
+                return res.status(400).json({ error: 'Channel name and UID are required' });
             }
 
-            const expiryTime = Math.floor(Date.now() / 1000) + 3600; // Token valid for 1 hour
+            if (!APP_ID || !AppCertificate) {
+                console.error('Missing Agora credentials:', { APP_ID, AppCertificate });
+                return res.status(500).json({ error: 'Agora App ID or Certificate not configured' });
+            }
+
+            const parsedUid = typeof uid === 'string' ? uid : parseInt(uid, 10);
+            if (!parsedUid && parsedUid !== 0) {
+                return res.status(400).json({ error: 'Invalid UID' });
+            }
+
             const currentTime = Math.floor(Date.now() / 1000);
-            const privileExpiresAt = currentTime + expiryTime;
-            const token = RtcTokenBuilder.buildTokenWithUid(
-                APP_ID,
-                AppCertificate,
-                channelName,
-                uid,
-                RtcRole.PUBLISHER,
-                privileExpiresAt
-            );
-            res.json({ token });
-        })
+            const expiryTimeInSeconds = 3600; // 1 hour
+            const privilegeExpiresAt = currentTime + expiryTimeInSeconds;
+
+            try {
+                console.log('Generating token:', { channelName, uid: parsedUid, privilegeExpiresAt });
+                const token = RtcTokenBuilder.buildTokenWithUid(
+                    APP_ID,
+                    AppCertificate,
+                    channelName,
+                    parsedUid,
+                    RtcRole.PUBLISHER,
+                    privilegeExpiresAt
+                );
+                res.json({ token });
+            } catch (error) {
+                console.error('Token generation failed:', error);
+                res.status(500).json({ error: 'Failed to generate token' });
+            }
+        });
 
     } finally {
         // Ensures that the client will close when you finish/error
