@@ -23,7 +23,7 @@ app.use(cors({
 
 const io = new Server(server, {
     cors: {
-        origin: ['http://localhost:5173', 'https://nexcall-1425e.web.app', 'https://nexcall.up.railway.app'],
+        origin: ['http://localhost:5173', 'https://agora-b3f83.web.app', 'https://agoratest.up.railway.app'],
         methods: ['GET', 'POST'],
         credentials: true
     }
