@@ -15,8 +15,9 @@ const { RtcTokenBuilder, RtcRole } = require('agora-token');
 app.use(express.json());
 app.use(cookieParser());
 
+
 app.use(cors({
-    origin: ['http://localhost:5173', 'https://agora-b3f83.web.app', 'http://localhost:5000'],
+    origin: ['http://localhost:5173', 'https://agora-b3f83.web.app', 'http://localhost:5000', 'hagoratest.up.railway.app'],
     credentials: true
 }));
 
@@ -30,7 +31,7 @@ const io = new Server(server, {
 
 
 const APP_ID = process.env.AGORA_APP_ID;
-const AppCertificate = process.env.APP_CERTIFICATE; 
+const AppCertificate = process.env.APP_CERTIFICATE;
 
 const roomUsers = {};
 const roomCodeToIdMap = {}; // New mapping for roomCode to room_id
